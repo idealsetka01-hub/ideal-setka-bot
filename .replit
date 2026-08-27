@@ -1,0 +1,8 @@
+run = "pip install -r requirements.txt && python main.py"
+entrypoint = "main.py"
+
+[nix]
+channel = "stable-23_11"
+
+[env]
+PYTHONUNBUFFERED = "1"

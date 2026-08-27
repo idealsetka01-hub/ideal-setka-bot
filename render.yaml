@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: ideal-setka-bot
+    runtime: python
+    plan: starter          # 24/7 uchun pullik tarif shart (Free uxlab qoladi)
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: BOT_TOKEN
+        sync: false          # Dashboard'da qo'lda kiritiladi (maxfiy)
+      - key: ADMIN_IDS
+        sync: false
+      - key: WEBAPP_URL
+        sync: false          # birinchi deploydan keyin domen ma'lum bo'lgach to'ldiriladi
+      - key: DATABASE_URL
+        value: sqlite:///data/ideal_setka.db
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: AI_MODEL
+        value: claude-sonnet-4-6
+    disk:
+      name: ideal-setka-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
