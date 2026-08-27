@@ -5,7 +5,6 @@ Mini App orqali berilgan buyurtmalar shu yerdan bot.orders.finalize_order() orqa
 bevosita Telegram bot backendiga (bir xil bazaga) yoziladi va adminlarga yuboriladi.
 """
 import io
-import os
 
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.staticfiles import StaticFiles
@@ -27,7 +26,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-os.makedirs("static/products", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/app", StaticFiles(directory="webapp", html=True), name="webapp")
 
