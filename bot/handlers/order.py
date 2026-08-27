@@ -7,12 +7,12 @@ from aiogram.types import Message, CallbackQuery, BufferedInputFile
 
 from config import (
     TECH_TEXT, DELIVERY_TEXT,
-    PAY_QR, PAY_CLICK, PAY_PAYME, PAY_CASH, PAY_CODE_TO_NAME,
+    PAY_QR, PAY_CLICK, PAY_PAYME, PAY_CODE_TO_NAME,
     CLICK_URL, PAYME_URL, QR_PAYLOAD,
 )
 from database import models
 from bot.keyboards import (
-    quantity_kb, eco_confirm_kb, payment_methods_kb, paid_done_kb, back_menu_kb,
+    quantity_kb, payment_methods_kb, paid_done_kb, back_menu_kb,
 )
 from bot.states import OrderStates
 from bot.utils import product_full_description, format_price, only_int_or_none
@@ -49,21 +49,16 @@ async def show_product(c: CallbackQuery, state: FSMContext):
         product_id=p["id"], product_desc=desc, price=p["price"], unit=p["unit"], size=p["size"],
     )
 
-    if p["is_eco_roll"]:
-        text = (
-            f"<b>{desc}</b>\n"
-            f"Narxi: {price_txt} — {p['unit']}\n\n"
-            f"📏 Standart: 10 metr / 1 rulon\n\n"
-            f"🚚 Yetkazib berish: {DELIVERY_TEXT}"
-        )
-        await c.message.answer(text, parse_mode="HTML", reply_markup=eco_confirm_kb(p["id"]))
-    else:
-        text = (
-            f"<b>{desc}</b>\nNarxi: {price_txt} — {p['unit']}\n\n"
-            f"🚚 Yetkazib berish: {DELIVERY_TEXT}\n\n"
-            f"Nechta {p['unit']} kerak?"
-        )
-        await c.message.answer(text, parse_mode="HTML", reply_markup=quantity_kb(p["id"], p["unit"]))
+    # ECO ZABOR uchun ham endi miqdor so'raladi (avval avtomatik 1 rulon edi) —
+    # faqat "har rulon = 10 metr" degan izoh qo'shimcha ko'rsatiladi.
+    eco_note = "\n\n📏 Har 1 rulon = standart 10 metr" if p["is_eco_roll"] else ""
+    text = (
+        f"<b>{desc}</b>\nNarxi: {price_txt} — {p['unit']}\n\n"
+        f"🚚 Yetkazib berish: {DELIVERY_TEXT}"
+        f"{eco_note}\n\n"
+        f"Nechta {p['unit']} kerak?"
+    )
+    await c.message.answer(text, parse_mode="HTML", reply_markup=quantity_kb(p["id"], p["unit"]))
     await c.answer()
 
 
@@ -172,11 +167,6 @@ async def choose_payment(c: CallbackQuery, state: FSMContext):
         return
 
     await state.update_data(payment_method=method)
-
-    if method == PAY_CASH:
-        await _finalize(c.message, state, receipt_file_id=None)
-        await c.answer()
-        return
 
     if method == PAY_CLICK:
         text = (

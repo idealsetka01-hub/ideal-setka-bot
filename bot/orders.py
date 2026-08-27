@@ -4,7 +4,7 @@ Buyurtmani yakunlash va adminlarga xabar yuborish — bot va Mini App (FastAPI)
 ikkalasi ham shu funksiyalardan foydalanadi, shu bilan bitta manba (single source
 of truth) saqlanadi.
 """
-from config import ADMIN_IDS, DELIVERY_TEXT, PAY_CASH
+from config import ADMIN_IDS, DELIVERY_TEXT
 from database import models
 from bot.utils import format_price
 from bot import bot_instance
@@ -24,9 +24,8 @@ def _build_order_text(order_code: str, full_name: str, phone: str, address: str,
         price_txt = format_price(it.get("price"))
         lines.append(f"• {it.get('product_desc')} ({it.get('size') or '-'}) — {it.get('qty')} {it.get('unit')} × {price_txt}")
 
-    pay_icon = "💵" if payment_method == PAY_CASH else "💳"
     lines.append(f"\n💰 Jami: {format_price(total)}")
-    lines.append(f"{pay_icon} To‘lov: {payment_method}")
+    lines.append(f"💳 To‘lov: {payment_method}")
     lines.append(f"\n🚚 Yetkazib berish: {DELIVERY_TEXT}")
     return "\n".join(lines)
 
@@ -49,14 +48,11 @@ async def notify_admins_new_order(order_code: str, full_name: str, phone: str, a
 async def finalize_order(telegram_id: int, username: str, full_name: str, phone: str, address: str,
                           payment_method: str, items: list, source: str, receipt_file_id: str = None) -> dict:
     """
-    Buyurtmani bazaga yozadi. Naqd pul bo'lsa yoki chek allaqachon bor bo'lsa —
-    darhol adminlarga yuboradi. Online to'lov (chek hali yo'q) bo'lsa — holatni
-    'kutilmoqda_tolov' qilib qo'yadi va chek kelgach xabar yuboriladi.
+    Buyurtmani bazaga yozadi. Barcha to'lov usullari online bo'lgani uchun,
+    chek kelmaguncha holat 'kutilmoqda_tolov' bo'lib turadi; chek biriktirilgach
+    (yoki shu chaqiruvda receipt_file_id berilgan bo'lsa) adminlarga yuboriladi.
     """
-    if payment_method == PAY_CASH or receipt_file_id:
-        status = "chek_yuborildi" if receipt_file_id and payment_method != PAY_CASH else "yangi"
-    else:
-        status = "kutilmoqda_tolov"
+    status = "chek_yuborildi" if receipt_file_id else "kutilmoqda_tolov"
 
     result = await models.create_order(
         telegram_id=telegram_id, username=username, full_name=full_name, phone=phone,
@@ -66,7 +62,7 @@ async def finalize_order(telegram_id: int, username: str, full_name: str, phone:
     if receipt_file_id:
         await models.attach_receipt(result["order_id"], receipt_file_id)
 
-    if status in ("yangi", "chek_yuborildi"):
+    if status == "chek_yuborildi":
         await notify_admins_new_order(
             result["order_code"], full_name, phone, address, items, result["total"],
             payment_method, receipt_file_id=receipt_file_id,

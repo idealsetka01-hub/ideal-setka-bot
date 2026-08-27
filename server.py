@@ -5,6 +5,7 @@ Mini App orqali berilgan buyurtmalar shu yerdan bot.orders.finalize_order() orqa
 bevosita Telegram bot backendiga (bir xil bazaga) yoziladi va adminlarga yuboriladi.
 """
 import io
+import os
 
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.staticfiles import StaticFiles
@@ -25,6 +26,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# "static" papkasi bo'sh bo'lgani uchun ba'zan Git orqali (yoki qo'lda GitHub
+# veb-interfeysi orqali) yuklanmay qolishi mumkin. StaticFiles papka jismonan
+# mavjud bo'lishini talab qiladi, shu sababli ishga tushishda o'zimiz yaratamiz —
+# bu bilan GitHub'da bo'sh papka bilan ovora bo'lish shart emas.
+os.makedirs("static", exist_ok=True)
+os.makedirs("webapp", exist_ok=True)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/app", StaticFiles(directory="webapp", html=True), name="webapp")
@@ -124,7 +132,7 @@ class OrderIn(BaseModel):
     full_name: constr(min_length=1)
     phone: constr(min_length=3)
     address: constr(min_length=1)
-    payment_method: str  # "QR" | "CLICK" | "PAYME" | "CASH"
+    payment_method: str  # "QR" | "CLICK" | "PAYME"
     items: list[OrderItemIn]
 
 
@@ -164,20 +172,19 @@ async def api_create_order(payload: OrderIn):
         source="webapp",
     )
 
-    needs_receipt = method != "Naqd pul"
-    if needs_receipt:
-        try:
-            bot = bot_instance.get_bot()
-            await bot.send_message(
-                payload.telegram_id,
-                f"🧾 Buyurtmangiz (#{result['order_code']}) qabul qilindi.\n\n"
-                f"Iltimos, to‘lov chekini shu chatga rasm shaklida yuboring.",
-            )
-        except Exception:
-            pass
+    # Barcha to'lov usullari online bo'lgani uchun chek har doim talab qilinadi.
+    try:
+        bot = bot_instance.get_bot()
+        await bot.send_message(
+            payload.telegram_id,
+            f"🧾 Buyurtmangiz (#{result['order_code']}) qabul qilindi.\n\n"
+            f"Iltimos, to‘lov chekini shu chatga rasm shaklida yuboring.",
+        )
+    except Exception:
+        pass
 
     return {
         "order_code": result["order_code"],
         "total": result["total"],
-        "needs_receipt": needs_receipt,
+        "needs_receipt": True,
     }

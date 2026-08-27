@@ -1,7 +1,7 @@
 # IDEAL SETKA — Telegram Bot + Mini App
 
 To‘liq ishlaydigan Telegram Bot + Telegram Mini App: 8 ta kategoriya, buyurtma
-oqimi (bot ichida va Mini App orqali), to‘lov tizimi (QR/CLICK/PAYME/Naqd),
+oqimi (bot ichida va Mini App orqali), to‘lov tizimi (QR/CLICK/PAYME),
 admin panel, texnik rejim, kategoriya rasmlari va AI yordamchi.
 
 ## Loyiha tuzilishi
@@ -87,12 +87,11 @@ qayta ishga tushirilganda **takrorlanmaydi** (baza bo'sh bo'lgandagina seed ishl
 2. **Mini App orqali**: kategoriya → mahsulot → savatga qo‘shish (bir nechta
    mahsulot qo‘shish mumkin) → savat → ism/telefon/manzil → to‘lov usuli →
    buyurtmani tasdiqlash.
-3. To‘lov usullari (online birinchi): **YAGONA QR-KOD → CLICK → PAYME → Naqd pul**.
-   - Naqd pul: chek talab qilinmaydi, buyurtma darhol adminlarga yuboriladi.
-   - Online: to‘lov havolasi/QR ko‘rsatiladi → foydalanuvchi to‘lovni amalga
-     oshiradi → chekni rasm qilib yuboradi (Mini App’dan buyurtma bergan
-     bo‘lsa ham, chekni **bot chatida** yuboradi) → shundan keyin buyurtma
-     barcha 4 adminga (matn + chek rasmi bilan) yuboriladi.
+3. To‘lov usullari — barchasi online: **YAGONA QR-KOD → CLICK → PAYME**.
+   To‘lov havolasi/QR ko‘rsatiladi → foydalanuvchi to‘lovni amalga
+   oshiradi → chekni rasm qilib yuboradi (Mini App’dan buyurtma bergan
+   bo‘lsa ham, chekni **bot chatida** yuboradi) → shundan keyin buyurtma
+   barcha 4 adminga (matn + chek rasmi bilan) yuboriladi.
 4. Har bir buyurtmaga unique kod beriladi: `#IS-000001`.
 5. Har bir mahsulot sahifasida: `🚚 Yetkazib berish: Yetkazish narxlari kelishilgan holatda.`
 

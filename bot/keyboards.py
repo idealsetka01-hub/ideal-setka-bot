@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 
-from config import WEBAPP_URL, PAY_QR, PAY_CLICK, PAY_PAYME, PAY_CASH
+from config import WEBAPP_URL, PAY_QR, PAY_CLICK, PAY_PAYME
 from bot.utils import product_short_label, format_price
 
 
@@ -46,20 +46,11 @@ def quantity_kb(product_id: int, unit: str):
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def eco_confirm_kb(product_id: int):
-    rows = [
-        [InlineKeyboardButton(text="✅ Buyurtma berish (1 rulon)", callback_data=f"qty:{product_id}:1")],
-        [InlineKeyboardButton(text="⬅️ Bekor qilish", callback_data="back_menu")],
-    ]
-    return InlineKeyboardMarkup(inline_keyboard=rows)
-
-
 def payment_methods_kb():
     rows = [
         [InlineKeyboardButton(text=f"🟣 {PAY_QR}", callback_data="pay:QR")],
         [InlineKeyboardButton(text=f"🔵 {PAY_CLICK}", callback_data="pay:CLICK")],
         [InlineKeyboardButton(text=f"🟢 {PAY_PAYME}", callback_data="pay:PAYME")],
-        [InlineKeyboardButton(text=f"💵 {PAY_CASH}", callback_data="pay:CASH")],
     ]
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
