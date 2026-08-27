@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>IDEAL SETKA</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+
+    <header class="topbar">
+      <button id="backBtn" class="icon-btn" hidden>←</button>
+      <h1 id="pageTitle">IDEAL SETKA</h1>
+      <button id="cartBtn" class="icon-btn">🛒 <span id="cartCount">0</span></button>
+    </header>
+
+    <main id="content">
+      <div id="loading" class="state-msg">Yuklanmoqda...</div>
+    </main>
+
+  </div>
+
+  <!-- Kategoriyalar ekrani shabloni -->
+  <template id="tpl-categories">
+    <div class="grid" id="categoryGrid"></div>
+  </template>
+
+  <!-- Mahsulotlar ekrani shabloni -->
+  <template id="tpl-products">
+    <div class="list" id="productList"></div>
+  </template>
+
+  <!-- Savat ekrani shabloni -->
+  <template id="tpl-cart">
+    <div class="list" id="cartList"></div>
+    <div class="cart-total" id="cartTotal"></div>
+    <button class="primary-btn" id="checkoutBtn">Buyurtma berish</button>
+  </template>
+
+  <!-- Checkout forma shabloni -->
+  <template id="tpl-checkout">
+    <form id="checkoutForm" class="form">
+      <label>Ismingiz
+        <input type="text" id="fullName" required>
+      </label>
+      <label>Telefon raqamingiz
+        <input type="tel" id="phone" placeholder="+998901234567" required>
+      </label>
+      <label>Manzilingiz
+        <textarea id="address" required></textarea>
+      </label>
+      <div class="pay-methods">
+        <div class="pay-title">To‘lov usuli</div>
+        <label class="pay-option"><input type="radio" name="pay" value="QR" checked> 🟣 YAGONA QR-KOD</label>
+        <label class="pay-option"><input type="radio" name="pay" value="CLICK"> 🔵 CLICK</label>
+        <label class="pay-option"><input type="radio" name="pay" value="PAYME"> 🟢 PAYME</label>
+        <label class="pay-option"><input type="radio" name="pay" value="CASH"> 💵 Naqd pul</label>
+      </div>
+      <button type="submit" class="primary-btn">Buyurtmani tasdiqlash</button>
+    </form>
+  </template>
+
+  <!-- Muvaffaqiyat ekrani -->
+  <template id="tpl-success">
+    <div class="success">
+      <div class="success-icon">✅</div>
+      <div id="successText"></div>
+      <button class="primary-btn" id="backToBotBtn">Botga qaytish</button>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
