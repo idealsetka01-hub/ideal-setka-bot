@@ -25,15 +25,16 @@ _SYSTEM_BASE = (
     "IDEAL SETKA — setka, panjara va zabor mahsulotlari ishlab chiqaruvchi/sotuvchi korxona.\n\n"
     "QOIDALAR:\n"
     "1) Mahsulot, narx yoki razmer haqida gapirganda FAQAT quyida berilgan mahsulot ma'lumotlariga "
-    "asoslan. Hech qanday narx, razmer yoki mahsulotni o'zingdan to'qib chiqarma.\n"
-    "2) Mijozning boshqa (mahsulotga bevosita aloqasi bo'lmagan) savollariga ham iloji boricha keng, "
-    "foydali va samimiy javob ber — masalan qurilish, montaj, maslahat, umumiy savollar. Bunday "
-    "holatlarda o'zingning bilimingdan erkin foydalanishing mumkin, faqat IDEAL SETKA'ning o'z "
-    "mahsulot/narxlari haqida gap ketmasa.\n"
+    "asoslan — hech qanday narx, razmer yoki mahsulotni o'zingdan to'qib chiqarma. Lekin shu doirada "
+    "iloji boricha KENGROQ va CHUQURROQ javob ber: mahsulotning qo'llanilishi, qanday tanlash kerakligi, "
+    "farqlari, tavsiyalar — xuddi ChatGPT kabi to'liq va tushunarli tushuntir, faqat quruq ro'yxat berma.\n"
+    "2) Mijozning boshqa (mahsulotga bevosita aloqasi bo'lmagan) savollariga ham ChatGPT kabi erkin, "
+    "keng va foydali javob ber — qurilish, montaj, umumiy maslahat yoki har qanday boshqa mavzu bo'lishi "
+    "mumkin. Bunday holatlarda o'zingning bilimingdan to'liq erkin foydalan.\n"
     "3) Agar kerakli mahsulot bazada topilmasa yoki narxi hali belgilanmagan bo'lsa, buni ochiq ayt "
     "va operator bilan bog'lanishni tavsiya qil.\n"
-    "4) Javobni o'zbek tilida, tabiiy va do'stona ohangda yoz — juda qisqa yoki quruq bo'lmasin, "
-    "lekin ortiqcha cho'zib ham yubormas.\n\n"
+    "4) Javobni o'zbek tilida, tabiiy, batafsil va do'stona ohangda yoz — juda qisqa yoki quruq "
+    "javob berma, lekin ortiqcha cho'zib ham yubormas.\n\n"
     f"🚚 Yetkazib berish barcha mahsulotlar uchun: {DELIVERY_TEXT}\n\n"
     f"Kontaktlar:\n{CONTACT_TEXT}"
 )
@@ -60,7 +61,7 @@ async def _ask_ai_model(query: str, catalog_text: str) -> str:
         client = anthropic.Anthropic(api_key=AI_API_KEY)
         resp = client.messages.create(
             model=AI_MODEL,
-            max_tokens=600,
+            max_tokens=1000,
             system=system_prompt,
             messages=[{"role": "user", "content": query}],
         )
@@ -92,42 +93,55 @@ def _format_matches(matches) -> str:
     return "\n".join(lines)
 
 
-@router.message(F.text, ~F.text.startswith("/"))
+@router.message(F.text)
 async def ai_catch_all(m: Message, state: FSMContext):
     # Bu handler faqat FSM holati bo'lmagan (boshqa hech bir aniq bosqichga tegishli
     # bo'lmagan) erkin matnli xabarlar uchun ishlaydi — chunki u routerlar ro'yxatida
     # eng oxirida turadi va aniqroq filterli handlerlar avval tekshiriladi.
-    if await models.is_technical_mode():
-        return await m.answer(TECH_TEXT, parse_mode="HTML")
-
     query = (m.text or "").strip()
-    if not query:
+    if not query or query.startswith("/"):
         return
 
-    if any(k in query.lower() for k in _CONTACT_KEYWORDS):
-        await m.answer(CONTACT_TEXT, parse_mode="HTML", reply_markup=back_menu_kb())
-        return
+    try:
+        if await models.is_technical_mode():
+            await m.answer(TECH_TEXT, parse_mode="HTML")
+            return
 
-    rows = await models.get_all_active_products()
+        if any(k in query.lower() for k in _CONTACT_KEYWORDS):
+            await m.answer(CONTACT_TEXT, parse_mode="HTML", reply_markup=back_menu_kb())
+            return
 
-    if AI_API_KEY:
+        rows = await models.get_all_active_products()
+
+        if AI_API_KEY:
+            try:
+                catalog_text = _format_catalog(rows)
+                answer = await _ask_ai_model(query, catalog_text)
+                if answer.strip():
+                    await m.answer(answer.strip(), reply_markup=back_menu_kb())
+                    return
+            except Exception:
+                pass  # AI API mavjud bo'lmasa/xato bo'lsa — oddiy qidiruvga o'tamiz
+
+        matches = _keyword_search(rows, query)
+        if matches:
+            text = "🔎 Topilgan mahsulotlar:\n\n" + _format_matches(matches)
+        else:
+            text = (
+                "🔎 IDEAL SETKA mahsulotlari bo‘yicha savolingizni yozing — masalan mahsulot nomi, "
+                "razmeri yoki kategoriyasini kiriting.\n\n"
+                "Kerak bo‘lsa, quyidagi menyudan kategoriyani tanlashingiz yoki operatorlarimizga "
+                "murojaat qilishingiz mumkin:\n\n" + CONTACT_TEXT
+            )
+        await m.answer(text, parse_mode="HTML", reply_markup=back_menu_kb())
+
+    except Exception:
+        # Nima bo'lishidan qat'iy nazar, foydalanuvchi javobsiz qolmasligi kerak.
         try:
-            catalog_text = _format_catalog(rows)
-            answer = await _ask_ai_model(query, catalog_text)
-            if answer.strip():
-                await m.answer(answer.strip(), reply_markup=back_menu_kb())
-                return
+            await m.answer(
+                "Kechirasiz, savolingizni qayta ifodalab yuborasizmi? Yoki menyudan kerakli "
+                "kategoriyani tanlang.",
+                reply_markup=back_menu_kb(),
+            )
         except Exception:
-            pass  # API mavjud bo'lmasa/xato bo'lsa — oddiy qidiruvga o'tamiz
-
-    matches = _keyword_search(rows, query)
-    if matches:
-        text = "🔎 Topilgan mahsulotlar:\n\n" + _format_matches(matches)
-    else:
-        text = (
-            "🔎 IDEAL SETKA mahsulotlari bo‘yicha savolingizni yozing — masalan mahsulot nomi, "
-            "razmeri yoki kategoriyasini kiriting.\n\n"
-            "Kerak bo‘lsa, quyidagi menyudan kategoriyani tanlashingiz yoki operatorlarimizga "
-            "murojaat qilishingiz mumkin:\n\n" + CONTACT_TEXT
-        )
-    await m.answer(text, parse_mode="HTML", reply_markup=back_menu_kb())
+            pass
