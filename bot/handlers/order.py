@@ -65,6 +65,22 @@ async def show_product(c: CallbackQuery, state: FSMContext):
 # ---------------------------------------------------------------------------
 # 2) Miqdorni tanlash
 # ---------------------------------------------------------------------------
+async def _confirm_qty_and_ask_name(target, state: FSMContext, qty: int):
+    """Miqdor tanlangach summani hisoblab ko'rsatadi, so'ng ism so'raydi."""
+    data = await state.get_data()
+    price = data.get("price")
+    unit = data.get("unit", "dona")
+
+    if price is not None:
+        total = price * qty
+        calc_text = f"🧮 {qty} {unit} × {format_price(price)} = {format_price(total)}"
+    else:
+        calc_text = "🧮 Bu mahsulot narxi hali admin tomonidan belgilanmagan — operator siz bilan bog‘lanadi."
+
+    await state.set_state(OrderStates.entering_name)
+    await target.answer(f"{calc_text}\n\n👤 Ismingizni kiriting:", reply_markup=back_menu_kb())
+
+
 @router.callback_query(F.data.startswith("qty:"))
 async def choose_quantity(c: CallbackQuery, state: FSMContext):
     if await _tech_blocked(c):
@@ -85,8 +101,7 @@ async def choose_quantity(c: CallbackQuery, state: FSMContext):
         )
 
     await state.update_data(qty=qty)
-    await state.set_state(OrderStates.entering_name)
-    await c.message.answer("👤 Ismingizni kiriting:", reply_markup=back_menu_kb())
+    await _confirm_qty_and_ask_name(c.message, state, qty)
     await c.answer()
 
 
@@ -118,8 +133,7 @@ async def receive_custom_quantity(m: Message, state: FSMContext):
         await m.answer("❗ Faqat butun son kiriting (kasr son qabul qilinmaydi). Masalan: 1, 2, 5, 10")
         return
     await state.update_data(qty=qty)
-    await state.set_state(OrderStates.entering_name)
-    await m.answer("👤 Ismingizni kiriting:", reply_markup=back_menu_kb())
+    await _confirm_qty_and_ask_name(m, state, qty)
 
 
 # ---------------------------------------------------------------------------
